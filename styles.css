@@ -205,6 +205,11 @@ main, header, footer {
   padding: 40px 7vw;
 }
 
+.page-hero {
+  padding-top: 56px;
+  padding-bottom: 16px;
+}
+
 .section-heading h2 {
   font-family: "Fraunces", serif;
   font-size: 2rem;
@@ -227,6 +232,16 @@ main, header, footer {
   border-radius: 999px;
   border: 1px solid rgba(27, 26, 23, 0.1);
   font-size: 0.9rem;
+}
+
+.pub-list {
+  margin: 16px 0 0;
+  padding-left: 22px;
+  line-height: 1.7;
+}
+
+.pub-list li {
+  margin-bottom: 14px;
 }
 
 .timeline {
