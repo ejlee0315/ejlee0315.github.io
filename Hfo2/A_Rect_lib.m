@@ -141,19 +141,18 @@ end
 % =====================================================================
 function cfg = set_defaults(cfg)
     nm = 1e-9;
-    D = @(f, v) set_if_empty(cfg, f, v);
 
-    cfg = D('lam0',   266*nm);
-    cfg = D('P',      260*nm);
-    cfg = D('h',      500*nm);
-    cfg = D('nSiO2',  1.46);
-    cfg = D('n_air',  1.0);
-    cfg = D('addpath_fmm', 'G:\내 드라이브\Reserach_Source\A. Simulation\fmm');
-    cfg = D('xlsx_path', '');
-    cfg = D('nx', 6);
-    cfg = D('ny', 6);
-    cfg = D('eta', 45);
-    cfg = D('base_layer_thickness', 100*nm);
+    cfg = set_if_empty(cfg, 'lam0',   266*nm);
+    cfg = set_if_empty(cfg, 'P',      260*nm);
+    cfg = set_if_empty(cfg, 'h',      500*nm);
+    cfg = set_if_empty(cfg, 'nSiO2',  1.46);
+    cfg = set_if_empty(cfg, 'n_air',  1.0);
+    cfg = set_if_empty(cfg, 'addpath_fmm', 'G:\내 드라이브\Reserach_Source\A. Simulation\fmm');
+    cfg = set_if_empty(cfg, 'xlsx_path', '');
+    cfg = set_if_empty(cfg, 'nx', 6);
+    cfg = set_if_empty(cfg, 'ny', 6);
+    cfg = set_if_empty(cfg, 'eta', 45);
+    cfg = set_if_empty(cfg, 'base_layer_thickness', 100*nm);
 
     if ~isfield(cfg,'cyl') || isempty(cfg.cyl)
         cfg.cyl = struct();

@@ -261,20 +261,19 @@ end
 % =====================================================================
 function cfg = set_defaults(cfg)
     nm = 1e-9; um = 1e-6;
-    d = @(f,v) sfe(cfg,f,v);
-    cfg = d('lam0', 266*nm);
-    cfg = d('D',    114*um);
-    cfg = d('P',    260*nm);
-    cfg = d('NA',   0.6);
-    cfg = d('ni',   1);
-    cfg = d('lib_txt',   sprintf('lib_%dnm_opt.txt', round(cfg.lam0*1e9)));
-    cfg = d('gds_name',  sprintf('metalens_%dnm', round(cfg.lam0*1e9)));
-    cfg = d('inc_angle', 0);
-    cfg = d('nc_poly',   24);
-    cfg = d('layers',    [10, 20, 30]);
-    cfg = d('plot',      true);
-    cfg = d('view_um',   60);
-    cfg = d('factor',    0);
+    cfg = sfe(cfg, 'lam0', 266*nm);
+    cfg = sfe(cfg, 'D',    114*um);
+    cfg = sfe(cfg, 'P',    260*nm);
+    cfg = sfe(cfg, 'NA',   0.6);
+    cfg = sfe(cfg, 'ni',   1);
+    cfg = sfe(cfg, 'lib_txt',   sprintf('lib_%dnm_opt.txt', round(cfg.lam0*1e9)));
+    cfg = sfe(cfg, 'gds_name',  sprintf('metalens_%dnm', round(cfg.lam0*1e9)));
+    cfg = sfe(cfg, 'inc_angle', 0);
+    cfg = sfe(cfg, 'nc_poly',   24);
+    cfg = sfe(cfg, 'layers',    [10, 20, 30]);
+    cfg = sfe(cfg, 'plot',      true);
+    cfg = sfe(cfg, 'view_um',   60);
+    cfg = sfe(cfg, 'factor',    0);
 end
 
 function cfg = sfe(cfg, f, v)

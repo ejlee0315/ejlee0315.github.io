@@ -143,32 +143,31 @@ end
 % =====================================================================
 function cfg = set_defaults_search(cfg)
     nm = 1e-9;
-    D = @(f, v) sd(cfg, f, v);
 
-    cfg = D('lam0', 266*nm);
-    cfg = D('h_list', [400 500 600 700]*nm);
+    cfg = sd(cfg, 'lam0', 266*nm);
+    cfg = sd(cfg, 'h_list', [400 500 600 700]*nm);
 
+    cfg = sd(cfg, 'NA_max', 0.6);
+    cfg = sd(cfg, 'ratio_list', [0.6 0.7 0.8 0.9 1.0]);
     if ~isfield(cfg,'P_list') || isempty(cfg.P_list)
-        cfg = D('NA_max', 0.6);
-        cfg = D('ratio_list', [0.6 0.7 0.8 0.9 1.0]);
         Pmax = cfg.lam0 / (2*cfg.NA_max);   % Nyquist 한계
         cfg.P_list = round(cfg.ratio_list * Pmax / nm) * nm;
         cfg.P_list = unique(cfg.P_list(cfg.P_list > 100*nm));
     end
 
-    cfg = D('nSiO2', 1.46);
-    cfg = D('n_air', 1.0);
-    cfg = D('addpath_fmm', 'G:\내 드라이브\Reserach_Source\A. Simulation\fmm');
-    cfg = D('xlsx_path', '');
-    cfg = D('nx', 6); cfg = D('ny', 6); cfg = D('eta', 45);
-    cfg = D('base_layer_thickness', 100*nm);
-    cfg = D('verbose', true);
-    cfg = D('save_dir', sprintf('opt_%dnm', round(cfg.lam0*1e9)));
+    cfg = sd(cfg, 'nSiO2', 1.46);
+    cfg = sd(cfg, 'n_air', 1.0);
+    cfg = sd(cfg, 'addpath_fmm', 'G:\내 드라이브\Reserach_Source\A. Simulation\fmm');
+    cfg = sd(cfg, 'xlsx_path', '');
+    cfg = sd(cfg, 'nx', 6); cfg = sd(cfg, 'ny', 6); cfg = sd(cfg, 'eta', 45);
+    cfg = sd(cfg, 'base_layer_thickness', 100*nm);
+    cfg = sd(cfg, 'verbose', true);
+    cfg = sd(cfg, 'save_dir', sprintf('opt_%dnm', round(cfg.lam0*1e9)));
 
-    cfg = D('nR', 30);   % cylinder radius 샘플 수
-    cfg = D('nS', 30);   % square side 샘플 수
-    cfg = D('nL', 10);   % cross length 샘플 수
-    cfg = D('nW', 6);    % cross width 샘플 수
+    cfg = sd(cfg, 'nR', 30);   % cylinder radius 샘플 수
+    cfg = sd(cfg, 'nS', 30);   % square side 샘플 수
+    cfg = sd(cfg, 'nL', 10);   % cross length 샘플 수
+    cfg = sd(cfg, 'nW', 6);    % cross width 샘플 수
 
     if ~isfield(cfg, 'opt') || isempty(cfg.opt)
         cfg.opt = struct('N_bin', 64, 'T_min', 0.5, ...
