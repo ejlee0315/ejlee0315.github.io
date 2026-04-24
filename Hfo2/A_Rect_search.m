@@ -163,14 +163,14 @@ function lib_cfg = build_lib_cfg(cfg, h, P, mat_path)
     lib_cfg.save_mat = mat_path;
 
     % ===== 형상 sweep 범위 (새 규칙) =====
-    %   원기둥 r : 40 ~ (P/2 - 40) nm
-    %   사각기둥 s: 80 ~ (P  -  80) nm
-    %   십자가 L : 80 ~ (P  -  80) nm
-    %   십자가 W : 80 ~ (P  -  80) nm   (W < L 만 사용; W==L 은 사각과 동일)
-    r_min   = 40*nm;   r_max = P/2 - 40*nm;
-    sq_min  = 80*nm;   sq_max = P - 80*nm;
-    crL_min = 80*nm;   crL_max = P - 80*nm;
-    crW_min = 80*nm;   crW_max = P - 80*nm;
+    %   원기둥 r : 35 ~ (P/2 - 35) nm
+    %   사각기둥 s: 70 ~ (P  -  70) nm
+    %   십자가 L : 70 ~ (P  -  70) nm
+    %   십자가 W : 70 ~ (P  -  70) nm   (W < L 만 사용; W==L 은 사각과 동일)
+    r_min   = 35*nm;   r_max = P/2 - 35*nm;
+    sq_min  = 70*nm;   sq_max = P - 70*nm;
+    crL_min = 70*nm;   crL_max = P - 70*nm;
+    crW_min = 70*nm;   crW_max = P - 70*nm;
 
     if r_max   < r_min,   warning('[P=%dnm] cyl range 무효 (r_max<r_min)',   round(P*1e9)); end
     if sq_max  < sq_min,  warning('[P=%dnm] sq range 무효',  round(P*1e9)); end
@@ -188,7 +188,7 @@ function cfg = set_defaults_search(cfg)
 
     cfg = sd(cfg, 'lam0', 266*nm);
     cfg = sd(cfg, 'h_list', [400 500 600 700 800]*nm);
-    cfg = sd(cfg, 'P_list', [200 210 220 230 240 250]*nm);
+    cfg = sd(cfg, 'P_list', [195 200 205 210 215 220]*nm);
 
     cfg = sd(cfg, 'nSiO2', 1.46);
     cfg = sd(cfg, 'n_air', 1.0);

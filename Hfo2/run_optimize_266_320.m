@@ -20,7 +20,7 @@ common.verbose = true;
 
 % (h, P) 후보 — 두 파장 공통
 common.h_list  = [400 500 600 700 800]*nm;
-common.P_list  = [200 210 220 230 240 250]*nm;
+common.P_list  = [195 200 205 210 215 220]*nm;
 
 % 형상 sweep 해상도
 common.nR = 30; common.nS = 30; common.nL = 10; common.nW = 10;
