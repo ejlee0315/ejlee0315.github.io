@@ -63,8 +63,10 @@ function lib = A_Rect_lib(cfg)
             n_cross = n_cross + 1;
         end
     end
-    % 45° 회전 십자가 (x-cross): bounding box = (L+W)/sqrt(2) 가 P 안에 들어와야 함
-    P_diag_limit = cfg.P * sqrt(2);     % 회전 후 bounding extent 상한
+    % 45° 회전 십자가 (x-cross): 회전 후 bbox = (L+W)/sqrt(2) <= (P - gap_min)
+    %                             → (L+W) <= (P - gap_min)*sqrt(2)
+    %   gap_min = 60 nm (최소 인접 pillar 간격)
+    P_diag_limit = (cfg.P - 60e-9) * sqrt(2);
     n_xcross = 0;
     for i = 1:numel(cfg.xcross.L)
         for j = 1:numel(cfg.xcross.W)

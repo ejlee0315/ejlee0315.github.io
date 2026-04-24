@@ -162,15 +162,16 @@ function lib_cfg = build_lib_cfg(cfg, h, P, mat_path)
     lib_cfg.base_layer_thickness = cfg.base_layer_thickness;
     lib_cfg.save_mat = mat_path;
 
-    % ===== 형상 sweep 범위 (P 축소에 맞춰 하향 조정) =====
-    %   원기둥 r : 25 ~ (P/2 - 25) nm
-    %   사각기둥 s: 50 ~ (P  -  50) nm
-    %   십자가 L : 50 ~ (P  -  50) nm
-    %   십자가 W : 50 ~ (P  -  50) nm   (W < L 만 사용; W==L 은 사각과 동일)
-    r_min   = 25*nm;   r_max = P/2 - 25*nm;
-    sq_min  = 50*nm;   sq_max = P - 50*nm;
-    crL_min = 50*nm;   crL_max = P - 50*nm;
-    crW_min = 50*nm;   crW_max = P - 50*nm;
+    % ===== 형상 sweep 범위 (min feature 80 nm, min gap 60 nm) =====
+    %   원기둥 r : 40 ~ (P/2 - 30) nm        [2r>=80, P-2r>=60]
+    %   사각기둥 s: 80 ~ (P - 60) nm          [s>=80, P-s>=60]
+    %   십자가 L : 80 ~ (P - 60) nm
+    %   십자가 W : 80 ~ (P - 60) nm   (W < L 만 사용)
+    %   xcross 는 회전 후 bbox 제약이 A_Rect_lib 에서 (L+W)<=(P-60)*sqrt(2) 로 필터됨
+    r_min   = 40*nm;   r_max = P/2 - 30*nm;
+    sq_min  = 80*nm;   sq_max = P - 60*nm;
+    crL_min = 80*nm;   crL_max = P - 60*nm;
+    crW_min = 80*nm;   crW_max = P - 60*nm;
 
     if r_max   < r_min,   warning('[P=%dnm] cyl range 무효 (r_max<r_min)',   round(P*1e9)); end
     if sq_max  < sq_min,  warning('[P=%dnm] sq range 무효',  round(P*1e9)); end
@@ -192,7 +193,7 @@ function cfg = set_defaults_search(cfg)
 
     cfg = sd(cfg, 'lam0', 266*nm);
     cfg = sd(cfg, 'h_list', [400 500 600 700 800]*nm);
-    cfg = sd(cfg, 'P_list', [160 165 170 175 180]*nm);
+    cfg = sd(cfg, 'P_list', [170 175 180 185 190]*nm);
 
     cfg = sd(cfg, 'nSiO2', 1.46);
     cfg = sd(cfg, 'n_air', 1.0);

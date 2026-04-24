@@ -19,12 +19,12 @@ common.base_layer_thickness = 100*nm;
 common.verbose = true;
 
 % (h, P) 후보 — 두 파장 공통
-%   P = 160~180 nm (FOV ±40° @ quadratic 기준 Nyquist 안전, 공정 감당 가능 범위)
-%     P <= lam0 / (2*(NA + sin40°));  sin40° = 0.643
-%     266nm P=180 : NA ≤ 0.103   /  P=160 : NA ≤ 0.188
-%     320nm P=180 : NA ≤ 0.246   /  P=160 : NA ≤ 0.357
+%   P = 170~190 nm (min feature 80 nm, min gap 60 nm 공정 규칙)
+%   FOV ±40° (quadratic) Nyquist :  P <= lam0 / (2*(NA + sin40°))
+%     266nm P=170 : NA ≤ 0.14   /  P=190 : NA ≤ 0.06
+%     320nm P=170 : NA ≤ 0.30   /  P=190 : NA ≤ 0.20
 common.h_list  = [400 500 600 700 800]*nm;
-common.P_list  = [160 165 170 175 180]*nm;
+common.P_list  = [170 175 180 185 190]*nm;
 
 % 형상 sweep 해상도
 common.nR = 30; common.nS = 30; common.nL = 10; common.nW = 10;
