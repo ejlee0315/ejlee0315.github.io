@@ -18,11 +18,12 @@ common.xlsx_path   = '';   % 같은 폴더의 260317_HfO2레진n,k.xlsx 자동 �
 common.base_layer_thickness = 100*nm;
 common.verbose = true;
 
-% (h, P) 후보 — 파장에 맞춰 P 자동 생성, h 는 충분히 두꺼운 영역
+% (h, P) 후보 — 두 파장 공통
 common.h_list  = [400 500 600 700 800]*nm;
+common.P_list  = [200 210 220 230 240 250]*nm;
 
 % 형상 sweep 해상도
-common.nR = 30; common.nS = 30; common.nL = 10; common.nW = 6;
+common.nR = 30; common.nS = 30; common.nL = 10; common.nW = 10;
 
 % 위상 bin 최적화 옵션
 common.opt = struct( ...
@@ -31,24 +32,20 @@ common.opt = struct( ...
     'prefer', {{'cyl','sq','cross'}}, ...
     'allow_wrap', true);
 
-% 점수: coverage 우선, T 가중. (둘 다 [0,1])
-% coverage 90% 이상 구간에서 T 가중을 더 강하게.
-common.score_fun = @(o) o.coverage^2 * o.mean_T;
+% 점수(참고용 로그): best 선정 자체는 (coverage, mean_T) lexicographic 으로
+% A_Rect_search 안에서 2단계 정렬됩니다. score_fun 은 summary/log 에만 쓰임.
+common.score_fun = @(o) o.coverage * 10 + o.mean_T;
 
 %% (1) 266 nm
 cfg266 = common;
 cfg266.lam0 = 266*nm;
-cfg266.NA_max = 0.6;
-cfg266.ratio_list = [0.7 0.8 0.9 1.0];     % P = ratio * lam/(2*NA)
-cfg266.save_dir   = 'opt_266nm';
+cfg266.save_dir = 'opt_266nm';
 res266 = A_Rect_search(cfg266);
 
 %% (2) 320 nm
 cfg320 = common;
 cfg320.lam0 = 320*nm;
-cfg320.NA_max = 0.6;
-cfg320.ratio_list = [0.7 0.8 0.9 1.0];
-cfg320.save_dir   = 'opt_320nm';
+cfg320.save_dir = 'opt_320nm';
 res320 = A_Rect_search(cfg320);
 
 %% 요약

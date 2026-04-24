@@ -47,7 +47,8 @@ function res = A_Rect_search(cfg)
 
     table_rows = zeros(nTot, 5);
     all_files = cell(nTot, 2);
-    best = struct('score', -inf);
+    all_libs  = cell(nTot, 1);
+    all_opts  = cell(nTot, 1);
     k = 0; t_all = tic;
 
     for ih = 1:nH
@@ -77,19 +78,38 @@ function res = A_Rect_search(cfg)
             score = cfg.score_fun(opt);
             table_rows(k, :) = [h, P, opt.coverage, opt.mean_T, score];
             all_files(k, :) = {mat_path, txt_path};
+            all_libs{k}  = lib;
+            all_opts{k}  = opt;
 
             if cfg.verbose
                 fprintf('  -> coverage=%.1f%%  mean_T=%.3f  score=%.4f\n', ...
                     opt.coverage*100, opt.mean_T, score);
             end
-
-            if score > best.score
-                best = struct('score', score, 'h', h, 'P', P, ...
-                              'tag', tag, 'lib', lib, 'opt', opt, ...
-                              'mat_path', mat_path, 'txt_path', txt_path);
-            end
         end
     end
+
+    % ==========================================================
+    %  BEST 선정 규칙 (lexicographic):
+    %    1순위: coverage 최대 (full 2pi cover 를 가장 잘 한 것)
+    %    2순위: mean_T 최대 (그 중에서 투과율 가장 높은 것)
+    % ==========================================================
+    covs = table_rows(:,3);  Ts = table_rows(:,4);
+    max_cov = max(covs);
+    tie_idx = find(covs >= max_cov - 1e-9);
+    [~, jj] = max(Ts(tie_idx));
+    ib = tie_idx(jj);
+    best = struct( ...
+        'score',    table_rows(ib, 5), ...
+        'h',        table_rows(ib, 1), ...
+        'P',        table_rows(ib, 2), ...
+        'coverage', covs(ib), ...
+        'mean_T',   Ts(ib), ...
+        'lib',      all_libs{ib}, ...
+        'opt',      all_opts{ib}, ...
+        'mat_path', all_files{ib, 1}, ...
+        'txt_path', all_files{ib, 2});
+    best.tag = sprintf('lam%dnm_h%dnm_P%dnm', round(cfg.lam0*1e9), ...
+                       round(best.h*1e9), round(best.P*1e9));
 
     res = struct();
     res.table = array2table(table_rows, ...
@@ -104,9 +124,18 @@ function res = A_Rect_search(cfg)
     if cfg.verbose
         fprintf('\n========================================================\n');
         fprintf(' DONE  (%.1f s)\n', toc(t_all));
-        fprintf(' BEST  h=%d nm  P=%d nm  coverage=%.1f%%  meanT=%.3f  score=%.4f\n', ...
+        fprintf(' 선정 규칙: coverage 최대 -> 동률시 mean_T 최대\n');
+        fprintf('\n  h[nm] | P[nm] | cov(%%) | meanT\n');
+        fprintf('  -------+-------+--------+------\n');
+        for k2 = 1:size(table_rows,1)
+            marker = ''; if k2 == ib, marker = '  <-- BEST'; end
+            fprintf('  %5d | %5d | %6.1f | %.3f%s\n', ...
+                round(table_rows(k2,1)*1e9), round(table_rows(k2,2)*1e9), ...
+                table_rows(k2,3)*100, table_rows(k2,4), marker);
+        end
+        fprintf('\n BEST  h=%d nm  P=%d nm  coverage=%.1f%%  meanT=%.3f\n', ...
             round(best.h*1e9), round(best.P*1e9), ...
-            best.opt.coverage*100, best.opt.mean_T, best.score);
+            best.opt.coverage*100, best.opt.mean_T);
         fprintf(' best lib mat : %s\n', best.mat_path);
         fprintf(' best lib txt : %s\n', best.txt_path);
         fprintf('========================================================\n');
@@ -133,11 +162,24 @@ function lib_cfg = build_lib_cfg(cfg, h, P, mat_path)
     lib_cfg.base_layer_thickness = cfg.base_layer_thickness;
     lib_cfg.save_mat = mat_path;
 
-    % 형상 sweep 범위는 P 에 맞게 매번 재정의
-    lib_cfg.cyl.r   = linspace(20*nm, max(20*nm, P/2 - 10*nm), cfg.nR);
-    lib_cfg.sq.s    = linspace(40*nm, max(40*nm, P    - 20*nm), cfg.nS);
-    lib_cfg.cross.L = linspace(80*nm, max(80*nm, P    - 20*nm), cfg.nL);
-    lib_cfg.cross.W = linspace(30*nm, min(120*nm, P/2 - 10*nm), cfg.nW);
+    % ===== 형상 sweep 범위 (새 규칙) =====
+    %   원기둥 r : 40 ~ (P/2 - 40) nm
+    %   사각기둥 s: 80 ~ (P  -  80) nm
+    %   십자가 L : 80 ~ (P  -  80) nm
+    %   십자가 W : 80 ~ (P  -  80) nm   (W < L 만 사용; W==L 은 사각과 동일)
+    r_min   = 40*nm;   r_max = P/2 - 40*nm;
+    sq_min  = 80*nm;   sq_max = P - 80*nm;
+    crL_min = 80*nm;   crL_max = P - 80*nm;
+    crW_min = 80*nm;   crW_max = P - 80*nm;
+
+    if r_max   < r_min,   warning('[P=%dnm] cyl range 무효 (r_max<r_min)',   round(P*1e9)); end
+    if sq_max  < sq_min,  warning('[P=%dnm] sq range 무효',  round(P*1e9)); end
+    if crL_max < crL_min, warning('[P=%dnm] cross L range 무효', round(P*1e9)); end
+
+    lib_cfg.cyl.r   = linspace(r_min,   max(r_min, r_max),   cfg.nR);
+    lib_cfg.sq.s    = linspace(sq_min,  max(sq_min, sq_max), cfg.nS);
+    lib_cfg.cross.L = linspace(crL_min, max(crL_min, crL_max), cfg.nL);
+    lib_cfg.cross.W = linspace(crW_min, max(crW_min, crW_max), cfg.nW);
 end
 
 % =====================================================================
@@ -145,15 +187,8 @@ function cfg = set_defaults_search(cfg)
     nm = 1e-9;
 
     cfg = sd(cfg, 'lam0', 266*nm);
-    cfg = sd(cfg, 'h_list', [400 500 600 700]*nm);
-
-    cfg = sd(cfg, 'NA_max', 0.6);
-    cfg = sd(cfg, 'ratio_list', [0.6 0.7 0.8 0.9 1.0]);
-    if ~isfield(cfg,'P_list') || isempty(cfg.P_list)
-        Pmax = cfg.lam0 / (2*cfg.NA_max);   % Nyquist 한계
-        cfg.P_list = round(cfg.ratio_list * Pmax / nm) * nm;
-        cfg.P_list = unique(cfg.P_list(cfg.P_list > 100*nm));
-    end
+    cfg = sd(cfg, 'h_list', [400 500 600 700 800]*nm);
+    cfg = sd(cfg, 'P_list', [200 210 220 230 240 250]*nm);
 
     cfg = sd(cfg, 'nSiO2', 1.46);
     cfg = sd(cfg, 'n_air', 1.0);
