@@ -19,8 +19,11 @@ common.base_layer_thickness = 100*nm;
 common.verbose = true;
 
 % (h, P) 후보 — 두 파장 공통
+%   P 는 FOV ±40° (quadratic phase) Nyquist 안전 범위로 축소:
+%     P <= lam0 / (2*(NA + sin40°));  sin40° = 0.643
+%     266nm: NA≤0.3 까지 OK,  320nm: NA≤0.25 까지 OK
 common.h_list  = [400 500 600 700 800]*nm;
-common.P_list  = [195 200 205 210 215 220]*nm;
+common.P_list  = [140 150 160 170 180]*nm;
 
 % 형상 sweep 해상도
 common.nR = 30; common.nS = 30; common.nL = 10; common.nW = 10;
