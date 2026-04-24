@@ -11,11 +11,11 @@ function result = A_RECT_multi(cfg)
 %     .ni           입사 매질 굴절률           (기본 1)
 %     .lib_txt      A_Rect_opt.m 가 만든 라이브러리 .txt 경로
 %                   (col1=r_eff[m] col2=phase[rad] col3=|t|
-%                    col4=shape(1=cyl,2=sq,3=cross) col5=p1[m] col6=p2[m])
+%                    col4=shape(1=cyl,2=sq,3=cross,4=xcross) col5=p1[m] col6=p2[m])
 %     .gds_name     GDS 파일 basename (확장자 제외)
 %     .inc_angle    입사 각도 [deg]            (기본 0)
 %     .nc_poly      원기둥 폴리곤 꼭짓점 수    (기본 24)
-%     .layers       [cyl_layer, sq_layer, cross_layer]  (기본 [10, 20, 30])
+%     .layers       [cyl_layer, sq_layer, cross_layer, xcross_layer]  (기본 [10, 20, 30, 40])
 %     .plot         플롯 여부                 (기본 true)
 %     .view_um      diffraction view window (µm, 대략) (기본 45)
 %     .factor       구조 축소량 [m]           (기본 0, A_RECT.m 원본과 동일)
@@ -152,8 +152,9 @@ function result = A_RECT_multi(cfg)
 
         subplot(2,3,4);
         imagesc(x_range/um, y_range/um, shape_id_map); axis image xy;
-        title('shape (1=cyl,2=sq,3=cross)'); colormap(gca,[1 1 1; ...
-            0.1 0.4 0.9; 0.9 0.4 0.1; 0.2 0.7 0.2]); caxis([0 3]); colorbar;
+        title('shape (1=cyl,2=sq,3=cross,4=xcross)');
+        colormap(gca,[1 1 1; 0.1 0.4 0.9; 0.9 0.4 0.1; 0.2 0.7 0.2; 0.6 0.3 0.8]);
+        caxis([0 4]); colorbar;
 
         subplot(2,3,5);
         imagesc(x_view/um, y_view/um, I_o); axis image xy;
@@ -235,11 +236,19 @@ function gds_path = write_gds(XX, YY, sid, p1, p2, mask, cfg)
                 if L<=0 || W<=0, continue; end
                 hL = L/2; hW = W/2;
                 % 시계방향 12점 (윗팔 우측상단에서 시작)
-                xy = [cx+hW cx+hW cx+hL cx+hL cx+hW cx+hW ...
-                      cx-hW cx-hW cx-hL cx-hL cx-hW cx-hW;
-                      cy+hL cy+hW cy+hW cy-hW cy-hW cy-hL ...
-                      cy-hL cy-hW cy-hW cy+hW cy+hW cy+hL];
+                xy = [hW hW hL hL hW hW -hW -hW -hL -hL -hW -hW;
+                      hL hW hW -hW -hW -hL -hL -hW -hW hW hW hL];
+                xy = xy + [cx; cy];
                 write_poly(fid, xy, cfg.layers(3));
+            case 4  % xcross (×, 45도 회전된 12점 폴리곤)
+                L = p1(ii); W = p2(ii);
+                if L<=0 || W<=0, continue; end
+                hL = L/2; hW = W/2;
+                xy0 = [hW hW hL hL hW hW -hW -hW -hL -hL -hW -hW;
+                       hL hW hW -hW -hW -hL -hL -hW -hW hW hW hL];
+                R45 = [cosd(45) -sind(45); sind(45) cosd(45)];
+                xy = R45 * xy0 + [cx; cy];
+                write_poly(fid, xy, cfg.layers(4));
         end
     end
 
@@ -270,7 +279,7 @@ function cfg = set_defaults(cfg)
     cfg = sfe(cfg, 'gds_name',  sprintf('metalens_%dnm', round(cfg.lam0*1e9)));
     cfg = sfe(cfg, 'inc_angle', 0);
     cfg = sfe(cfg, 'nc_poly',   24);
-    cfg = sfe(cfg, 'layers',    [10, 20, 30]);
+    cfg = sfe(cfg, 'layers',    [10, 20, 30, 40]);
     cfg = sfe(cfg, 'plot',      true);
     cfg = sfe(cfg, 'view_um',   60);
     cfg = sfe(cfg, 'factor',    0);

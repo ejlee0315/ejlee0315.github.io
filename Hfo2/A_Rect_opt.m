@@ -28,9 +28,9 @@ function opt = A_Rect_opt(lib, opt_cfg)
 %     col1 = effective_radius [m]   (렌즈 생성 코드용: sqrt(area/pi))
 %     col2 = phase  [rad]
 %     col3 = |t|    (amplitude)
-%     col4 = shape_id  (1/2/3)
+%     col4 = shape_id  (1=cyl / 2=sq / 3=cross / 4=xcross)
 %     col5 = p1 [m]
-%     col6 = p2 [m]  (cross만 의미있음)
+%     col6 = p2 [m]  (cross, xcross 만 의미있음)
 
     if ischar(lib) || isstring(lib)
         S = load(lib); lib = S.lib;
@@ -43,9 +43,10 @@ function opt = A_Rect_opt(lib, opt_cfg)
     shape_id_all = zeros(N, 1);
     for i = 1:N
         switch lib.shape{i}
-            case 'cyl',   shape_id_all(i) = 1;
-            case 'sq',    shape_id_all(i) = 2;
-            case 'cross', shape_id_all(i) = 3;
+            case 'cyl',    shape_id_all(i) = 1;
+            case 'sq',     shape_id_all(i) = 2;
+            case 'cross',  shape_id_all(i) = 3;
+            case 'xcross', shape_id_all(i) = 4;
         end
     end
 
@@ -164,7 +165,10 @@ function r = eff_radius(sid, p1, p2)
             case 2  % square side = p1
                 A = p1(i)^2;
                 r(i) = sqrt(A/pi);
-            case 3  % cross: L=p1, W=p2, area = 2*L*W - W^2
+            case 3  % cross (+) : L=p1, W=p2, area = 2*L*W - W^2
+                A = 2*p1(i)*p2(i) - p2(i)^2;
+                r(i) = sqrt(A/pi);
+            case 4  % xcross (×, 45도 회전): 면적은 + 와 동일 (회전만)
                 A = 2*p1(i)*p2(i) - p2(i)^2;
                 r(i) = sqrt(A/pi);
             otherwise
@@ -178,8 +182,9 @@ function plot_result(lib, opt)
 
     % (1) 산점도: 전체 라이브러리 (phase, T), 모양별 컬러
     subplot(2,2,1); hold on;
-    cmap = [0.1 0.4 0.8; 0.85 0.3 0.1; 0.2 0.6 0.2]; names = {'cyl','sq','cross'};
-    for sid = 1:3
+    cmap = [0.1 0.4 0.8; 0.85 0.3 0.1; 0.2 0.6 0.2; 0.6 0.3 0.8];
+    names = {'cyl','sq','cross','xcross'};
+    for sid = 1:4
         idx = strcmp(lib.shape, names{sid});
         scatter(lib.phi(idx), lib.T(idx), 18, cmap(sid,:), 'filled', ...
             'MarkerFaceAlpha', 0.4, 'DisplayName', names{sid});
@@ -210,8 +215,8 @@ function plot_result(lib, opt)
 
     % (4) shape 별 분포 (선택된 것만)
     subplot(2,2,4);
-    shape_counts = histcounts(opt.shape_id(~isnan(opt.shape_id)), 0.5:1:3.5);
-    bar(shape_counts); set(gca,'XTickLabel',{'cyl','sq','cross'});
+    shape_counts = histcounts(opt.shape_id(~isnan(opt.shape_id)), 0.5:1:4.5);
+    bar(shape_counts); set(gca,'XTickLabel',{'cyl','sq','cross','xcross'});
     ylabel('# selected atoms'); grid on; box on;
     title('shape usage');
 end
@@ -220,7 +225,7 @@ end
 function cfg = set_defaults_opt(cfg, lib)
     if ~isfield(cfg,'N_bin')    || isempty(cfg.N_bin),    cfg.N_bin = 64; end
     if ~isfield(cfg,'T_min')    || isempty(cfg.T_min),    cfg.T_min = 0.5; end
-    if ~isfield(cfg,'prefer')   || isempty(cfg.prefer),   cfg.prefer = {'cyl','sq','cross'}; end
+    if ~isfield(cfg,'prefer')   || isempty(cfg.prefer),   cfg.prefer = {'cyl','sq','cross','xcross'}; end
     if ~isfield(cfg,'plot')     || isempty(cfg.plot),     cfg.plot = true; end
     if ~isfield(cfg,'allow_wrap')|| isempty(cfg.allow_wrap), cfg.allow_wrap = true; end
     if ~isfield(cfg,'wrap_range')|| isempty(cfg.wrap_range), cfg.wrap_range = 2; end
@@ -230,9 +235,10 @@ function cfg = set_defaults_opt(cfg, lib)
     ids = zeros(1, numel(cfg.prefer));
     for i = 1:numel(cfg.prefer)
         switch cfg.prefer{i}
-            case 'cyl', ids(i) = 1;
-            case 'sq',  ids(i) = 2;
-            case 'cross', ids(i) = 3;
+            case 'cyl',    ids(i) = 1;
+            case 'sq',     ids(i) = 2;
+            case 'cross',  ids(i) = 3;
+            case 'xcross', ids(i) = 4;
         end
     end
     cfg.prefer_ids = ids;

@@ -1,5 +1,5 @@
 function lib = A_Rect_lib(cfg)
-% A_Rect_lib  원기둥/사각기둥/십자가기둥 3종 구조의 라이브러리 스윕
+% A_Rect_lib  원기둥/사각기둥/십자가/45°십자가 4종 구조의 라이브러리 스윕
 %
 %   lib = A_Rect_lib(cfg)
 %
@@ -19,10 +19,12 @@ function lib = A_Rect_lib(cfg)
 %     .sq.s         [m]    사각기둥 한 변 sweep
 %     .cross.L      [m]    십자가 외곽 길이 sweep
 %     .cross.W      [m]    십자가 팔 너비 sweep
+%     .xcross.L     [m]    45°회전 십자가 외곽 길이 sweep
+%     .xcross.W     [m]    45°회전 십자가 팔 너비 sweep
 %
 %   OUTPUT (lib 구조체)
-%     .shape : 'cyl' | 'sq' | 'cross' (각 엔트리)
-%     .p1, .p2 : 파라미터 (cyl: r, p2=NaN / sq: s, p2=NaN / cross: L, W)
+%     .shape : 'cyl' | 'sq' | 'cross' | 'xcross' (각 엔트리)
+%     .p1, .p2 : 파라미터 (cyl: r, p2=NaN / sq: s, p2=NaN / cross, xcross: L, W)
 %     .t  : 복소 투과계수
 %     .T  : 전력 투과율
 %     .phi: 위상 [-pi, pi]
@@ -45,7 +47,7 @@ function lib = A_Rect_lib(cfg)
         cfg.lam0*1e9, n_mat, k_mat, real(nc), imag(nc));
     cfg.n_mat = n_mat; cfg.k_mat = k_mat; cfg.nc = nc;
 
-    % 준비: 세 타입의 파라미터 그리드
+    % 준비: 네 타입의 파라미터 그리드
     jobs = {};
     for i = 1:numel(cfg.cyl.r)
         jobs{end+1} = struct('shape','cyl','p1',cfg.cyl.r(i),'p2',NaN); %#ok<AGROW>
@@ -53,15 +55,29 @@ function lib = A_Rect_lib(cfg)
     for i = 1:numel(cfg.sq.s)
         jobs{end+1} = struct('shape','sq','p1',cfg.sq.s(i),'p2',NaN); %#ok<AGROW>
     end
+    n_cross = 0;
     for i = 1:numel(cfg.cross.L)
         for j = 1:numel(cfg.cross.W)
             if cfg.cross.W(j) >= cfg.cross.L(i), continue; end  % 팔너비 < 전체길이
             jobs{end+1} = struct('shape','cross','p1',cfg.cross.L(i),'p2',cfg.cross.W(j)); %#ok<AGROW>
+            n_cross = n_cross + 1;
+        end
+    end
+    % 45° 회전 십자가 (x-cross): bounding box = (L+W)/sqrt(2) 가 P 안에 들어와야 함
+    P_diag_limit = cfg.P * sqrt(2);     % 회전 후 bounding extent 상한
+    n_xcross = 0;
+    for i = 1:numel(cfg.xcross.L)
+        for j = 1:numel(cfg.xcross.W)
+            L = cfg.xcross.L(i); W = cfg.xcross.W(j);
+            if W >= L, continue; end
+            if (L + W) > P_diag_limit, continue; end  % 회전 후 cell 밖으로 삐져나감 방지
+            jobs{end+1} = struct('shape','xcross','p1',L,'p2',W); %#ok<AGROW>
+            n_xcross = n_xcross + 1;
         end
     end
     N = numel(jobs);
-    fprintf('[A_Rect_lib] 총 %d 개 구조 스윕 (cyl=%d, sq=%d, cross=%d)\n', ...
-        N, numel(cfg.cyl.r), numel(cfg.sq.s), numel(cfg.cross.L)*numel(cfg.cross.W));
+    fprintf('[A_Rect_lib] 총 %d 개 구조 스윕 (cyl=%d, sq=%d, cross=%d, xcross=%d)\n', ...
+        N, numel(cfg.cyl.r), numel(cfg.sq.s), n_cross, n_xcross);
 
     shape = cell(N,1); p1 = zeros(N,1); p2 = zeros(N,1);
     t = zeros(N,1); T = zeros(N,1); phi = zeros(N,1);
@@ -129,6 +145,18 @@ function [t, T] = run_fmm(cfg, job)
                       'rect', {'n', cfg.nc, 'x', cfg.P/2, 'y', cfg.P/2, ...
                                'xspan', W, 'yspan', L, 'nvm', true});
             end
+        case 'xcross'
+            % 45°돌아간 십자가 (×) — 두 rect 를 각각 45° 회전
+            % fmm 이 rect 에 대해 'phi'(deg) 회전 파라미터를 지원한다고 가정.
+            % 만약 fmm 의 인자 이름이 'angle' 또는 'theta' 이면 아래 'phi' 를 교체.
+            L = job.p1; W = job.p2;
+            if L > 0 && W > 0
+                c.add('multiptc','d', cfg.h, 'nh', 1, ...
+                      'rect', {'n', cfg.nc, 'x', cfg.P/2, 'y', cfg.P/2, ...
+                               'xspan', L, 'yspan', W, 'phi', 45, 'nvm', true}, ...
+                      'rect', {'n', cfg.nc, 'x', cfg.P/2, 'y', cfg.P/2, ...
+                               'xspan', W, 'yspan', L, 'phi', 45, 'nvm', true});
+            end
         otherwise
             error('Unknown shape: %s', job.shape);
     end
@@ -176,6 +204,16 @@ function cfg = set_defaults(cfg)
     end
     if ~isfield(cfg.cross, 'W') || isempty(cfg.cross.W)
         cfg.cross.W = linspace(40*nm, 120*nm, 8);
+    end
+
+    if ~isfield(cfg,'xcross') || isempty(cfg.xcross)
+        cfg.xcross = struct();
+    end
+    if ~isfield(cfg.xcross, 'L') || isempty(cfg.xcross.L)
+        cfg.xcross.L = cfg.cross.L;      % 기본적으로 cross 와 동일 sweep
+    end
+    if ~isfield(cfg.xcross, 'W') || isempty(cfg.xcross.W)
+        cfg.xcross.W = cfg.cross.W;
     end
 
     if ~isfield(cfg, 'save_mat') || isempty(cfg.save_mat)

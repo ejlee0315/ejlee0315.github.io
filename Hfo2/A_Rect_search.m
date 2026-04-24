@@ -176,10 +176,14 @@ function lib_cfg = build_lib_cfg(cfg, h, P, mat_path)
     if sq_max  < sq_min,  warning('[P=%dnm] sq range 무효',  round(P*1e9)); end
     if crL_max < crL_min, warning('[P=%dnm] cross L range 무효', round(P*1e9)); end
 
-    lib_cfg.cyl.r   = linspace(r_min,   max(r_min, r_max),   cfg.nR);
-    lib_cfg.sq.s    = linspace(sq_min,  max(sq_min, sq_max), cfg.nS);
-    lib_cfg.cross.L = linspace(crL_min, max(crL_min, crL_max), cfg.nL);
-    lib_cfg.cross.W = linspace(crW_min, max(crW_min, crW_max), cfg.nW);
+    lib_cfg.cyl.r    = linspace(r_min,   max(r_min, r_max),   cfg.nR);
+    lib_cfg.sq.s     = linspace(sq_min,  max(sq_min, sq_max), cfg.nS);
+    lib_cfg.cross.L  = linspace(crL_min, max(crL_min, crL_max), cfg.nL);
+    lib_cfg.cross.W  = linspace(crW_min, max(crW_min, crW_max), cfg.nW);
+    % 45°회전 십자가 — 같은 L/W 범위 사용. 단, 회전 후 bbox = (L+W)/sqrt(2) <= P 조건은
+    % A_Rect_lib 내부에서 자동 필터링됨.
+    lib_cfg.xcross.L = lib_cfg.cross.L;
+    lib_cfg.xcross.W = lib_cfg.cross.W;
 end
 
 % =====================================================================
