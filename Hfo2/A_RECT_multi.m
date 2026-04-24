@@ -67,7 +67,7 @@ function result = A_RECT_multi(cfg)
     phase_map(~mask_aperture) = 0;
 
     %% --------------------- 라이브러리 로드 --------------------------------
-    lib = load_lib_txt(cfg.lib_txt);
+    lib = load_lib_txt(cfg.lib_txt, cfg.primary_wl);
     % lib.phase: col2, lib.T: col3^2 (|t|^2),  lib.shape_id, lib.p1, lib.p2
     fprintf('  library entries = %d  (cyl=%d, sq=%d, cross=%d)\n', ...
         numel(lib.phase), sum(lib.shape_id==1), ...
@@ -189,16 +189,44 @@ function result = A_RECT_multi(cfg)
 end
 
 % =====================================================================
-function lib = load_lib_txt(path)
+function lib = load_lib_txt(path, primary_wl)
+% 6-col (single-wavelength) 또는 8-col (joint dual-wavelength) 포맷 자동 감지
+%   6-col : r_eff, phase, |t|, shape_id, p1, p2
+%   8-col : r_eff, phi266, |t266|, phi320, |t320|, shape_id, p1, p2
+%   primary_wl : 'lam266' | 'lam320'  (8-col 일 때 어느 파장을 쓸지)
+    if nargin < 2 || isempty(primary_wl), primary_wl = 'lam266'; end
     M = readmatrix(path, 'CommentStyle','%');
     M = M(all(~isnan(M),2), :);
+    ncol = size(M, 2);
     lib = struct();
-    lib.r_eff    = M(:,1);
-    lib.phase    = M(:,2);
-    lib.amp      = M(:,3);
-    lib.shape_id = M(:,4);
-    lib.p1       = M(:,5);
-    lib.p2       = M(:,6);
+    if ncol == 8
+        lib.r_eff    = M(:,1);
+        if strcmpi(primary_wl, 'lam266')
+            lib.phase = M(:,2);  lib.amp = M(:,3);
+            lib.phase_other = M(:,4); lib.amp_other = M(:,5);
+            lib.primary = 'lam266';
+        else
+            lib.phase = M(:,4);  lib.amp = M(:,5);
+            lib.phase_other = M(:,2); lib.amp_other = M(:,3);
+            lib.primary = 'lam320';
+        end
+        lib.shape_id = M(:,6);
+        lib.p1       = M(:,7);
+        lib.p2       = M(:,8);
+        lib.is_joint = true;
+        fprintf('[load_lib_txt] JOINT 8-col 포맷 감지. primary = %s\n', lib.primary);
+    elseif ncol == 6
+        lib.r_eff    = M(:,1);
+        lib.phase    = M(:,2);
+        lib.amp      = M(:,3);
+        lib.shape_id = M(:,4);
+        lib.p1       = M(:,5);
+        lib.p2       = M(:,6);
+        lib.is_joint = false;
+        fprintf('[load_lib_txt] 6-col 포맷 감지 (single wavelength).\n');
+    else
+        error('Unknown lib txt column count: %d (6 or 8 expected)', ncol);
+    end
 end
 
 % =====================================================================
@@ -283,6 +311,7 @@ function cfg = set_defaults(cfg)
     cfg = sfe(cfg, 'plot',      true);
     cfg = sfe(cfg, 'view_um',   60);
     cfg = sfe(cfg, 'factor',    0);
+    cfg = sfe(cfg, 'primary_wl','lam266');   % joint(8-col) lib 일 때 어느 파장으로 설계할지
 end
 
 function cfg = sfe(cfg, f, v)
