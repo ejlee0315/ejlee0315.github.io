@@ -188,7 +188,7 @@ function cfg = set_defaults_search(cfg)
 
     cfg = sd(cfg, 'lam0', 266*nm);
     cfg = sd(cfg, 'h_list', [400 500 600 700 800]*nm);
-    cfg = sd(cfg, 'P_list', [140 150 160 170 180]*nm);
+    cfg = sd(cfg, 'P_list', [160 165 170 175 180]*nm);
 
     cfg = sd(cfg, 'nSiO2', 1.46);
     cfg = sd(cfg, 'n_air', 1.0);
