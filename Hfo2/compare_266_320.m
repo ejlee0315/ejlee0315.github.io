@@ -164,8 +164,11 @@ function [cov266, T266vec, cov320, T320vec] = joint_analysis(mat_paths_266, mat_
             otherwise,     score = T1 .* T2;
         end
 
-        if strcmpi(cfg.primary, 'lam266'), phi_prim = phi1;
-        else,                              phi_prim = phi2; end
+        if strcmpi(cfg.primary, 'lam266')
+            phi_prim = phi1;
+        else
+            phi_prim = phi2;
+        end
 
         edges = linspace(-pi, pi, cfg.N_bin+1);
         sel = nan(cfg.N_bin, 1);
@@ -205,8 +208,11 @@ function joint_txt_path = save_joint_txt(mat266, mat320, cfg)
         otherwise,     score = T1 .* T2;
     end
 
-    if strcmpi(cfg.primary, 'lam266'), phi_prim = phi1; tag = '266';
-    else,                              phi_prim = phi2; tag = '320'; end
+    if strcmpi(cfg.primary, 'lam266')
+        phi_prim = phi1; tag = '266';
+    else
+        phi_prim = phi2; tag = '320';
+    end
 
     edges = linspace(-pi, pi, cfg.N_bin+1);
     M = [];
@@ -259,20 +265,29 @@ function plot_compare(tbl, best, cfg)
         SCO(ip,ih) =tbl.score(k);
     end
 
-    hp = @() plot(best.h*1e9, best.P*1e9, 'kp', ...
-        'MarkerSize',18,'MarkerFaceColor','y','LineWidth',1.3);
+    hx = best.h*1e9; py = best.P*1e9;
 
     subplot(2,3,1); imagesc(h_vec,P_vec,C266); axis xy; colorbar; caxis([0 1]);
-    xlabel('h (nm)'); ylabel('P (nm)'); title('266 cov'); hold on; hp();
+    xlabel('h (nm)'); ylabel('P (nm)'); title('266 cov'); hold on;
+    plot(hx,py,'kp','MarkerSize',18,'MarkerFaceColor','y','LineWidth',1.3);
+
     subplot(2,3,2); imagesc(h_vec,P_vec,T266m); axis xy; colorbar; caxis([0 1]);
-    xlabel('h (nm)'); ylabel('P (nm)'); title('266 mean T'); hold on; hp();
+    xlabel('h (nm)'); ylabel('P (nm)'); title('266 mean T'); hold on;
+    plot(hx,py,'kp','MarkerSize',18,'MarkerFaceColor','y','LineWidth',1.3);
+
     subplot(2,3,3); imagesc(h_vec,P_vec,SCO); axis xy; colorbar;
     xlabel('h (nm)'); ylabel('P (nm)');
-    title(sprintf('combined score (%s)',cfg.score_mode)); hold on; hp();
+    title(sprintf('combined score (%s)',cfg.score_mode)); hold on;
+    plot(hx,py,'kp','MarkerSize',18,'MarkerFaceColor','y','LineWidth',1.3);
+
     subplot(2,3,4); imagesc(h_vec,P_vec,C320); axis xy; colorbar; caxis([0 1]);
-    xlabel('h (nm)'); ylabel('P (nm)'); title('320 cov'); hold on; hp();
+    xlabel('h (nm)'); ylabel('P (nm)'); title('320 cov'); hold on;
+    plot(hx,py,'kp','MarkerSize',18,'MarkerFaceColor','y','LineWidth',1.3);
+
     subplot(2,3,5); imagesc(h_vec,P_vec,T320m); axis xy; colorbar; caxis([0 1]);
-    xlabel('h (nm)'); ylabel('P (nm)'); title('320 mean T'); hold on; hp();
+    xlabel('h (nm)'); ylabel('P (nm)'); title('320 mean T'); hold on;
+    plot(hx,py,'kp','MarkerSize',18,'MarkerFaceColor','y','LineWidth',1.3);
+
     subplot(2,3,6); hold on;
     scatter(tbl.T266,tbl.T320,60,tbl.score,'filled');
     plot(best.T266,best.T320,'kp','MarkerSize',18,'MarkerFaceColor','y','LineWidth',1.3);
